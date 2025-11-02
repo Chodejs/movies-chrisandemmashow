@@ -3,530 +3,546 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chris & Emma's Holiday Movie Marathon</title>
+    <title>Holiday Movie Marathon</title>
     
-    <!-- 1. Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. Load our Google Fonts -->
-    <!-- Inter for the body text -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Mountains of Christmas for the festive title -->
-    <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+    <!-- Open Graph Tags (from your brilliant idea!) -->
+    <meta property="og:title" content="Chris & Emma's Holiday Movie Marathon">
+    <meta property="og:description" content="Join our 25-day Advent calendar of festive (and not-so-festive) movie picks. See what we picked and track your progress!">
+    <meta property="og:image" content="https://placehold.co/1200x630/c53030/ffffff?text=Holiday+Movie+Marathon&font=inter">
+    <meta property="og:url" content="https://movies.chrisandemmashow.com">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
 
-    <!-- 3. Our Custom Styles -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- 
+      This is our dedicated <style> tag for the snow.
+      This fixed the "insertRule" error from before by giving the
+      snow animation its own non-Tailwind stylesheet to write to.
+    -->
+    <style id="snow-styles"></style>
+
     <style>
-        /* Base font */
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Dark blue-gray */
+            color: #d1d5db;
         }
-
-        /* Festive font for the main title */
-        h1.festive-title {
+        .font-christmas {
             font-family: 'Mountains of Christmas', cursive;
         }
+        
+        /* --- Day Box Styles --- */
+        .day-box {
+            aspect-ratio: 1 / 1;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .day-box .number {
+            font-size: 2.5rem;
+            line-height: 1;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        
+        /* Locked State (Default) */
+        .day-box-locked {
+            background-color: #374151; /* Medium gray */
+            cursor: not-allowed;
+            color: #9ca3af;
+        }
+        .day-box-locked .number {
+            opacity: 0.5;
+        }
+        
+        /* Unlocked State */
+        .day-box-unlocked {
+            background-color: #c53030; /* Festive red */
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        }
+        .day-box-unlocked:hover {
+            transform: scale(1.05);
+            background-color: #e53e3e;
+            z-index: 10;
+        }
+        .day-box-unlocked:hover .number {
+            transform: scale(1.1);
+        }
+        
+        /* Watched State (Set by JS) */
+        .day-box-watched {
+            background-color: #166534; /* Festive green */
+            color: #d1d5db;
+        }
+        .day-box-watched:hover {
+            background-color: #15803d;
+        }
 
-        /* --- Falling Snow Animation --- */
-        #snow-container {
+        /* --- Modal Styles --- */
+        .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
-            z-index: 9999;
-            overflow: hidden;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 99;
         }
-
-        .snow {
-            position: absolute;
-            top: -10px;
-            background: white;
-            border-radius: 50%;
-            opacity: 0.8;
-            animation: snowfall linear infinite;
+        .modal-content {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 800px; /* Wider for the two-column layout */
+            max-height: 90vh;
+            overflow-y: auto;
+            background-color: #1f2937; /* Lighter dark */
+            color: #d1d5db;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+            z-index: 101;
         }
-
-        @keyframes snowfall {
-            0% {
-                transform: translateY(0) translateX(0);
+        
+        /* --- NEW: Two-column layout for the modal body --- */
+        #movieModalBody {
+            display: grid;
+            grid-template-columns: 1fr; /* Default for mobile */
+            gap: 1.5rem;
+        }
+        
+        @media (min-width: 640px) { /* sm: breakpoint */
+             #movieModalBody {
+                grid-template-columns: 250px 1fr; /* 2-column layout on desktop */
             }
-            100% {
-                transform: translateY(105vh) translateX(5vw);
-            }
-        }
-        /* --- End Snow --- */
-
-        /* Custom modal scrollbar */
-        #modalContent::-webkit-scrollbar {
-            width: 8px;
-        }
-        #modalContent::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        #modalContent::-webkit-scrollbar-thumb {
-            background: #b91c1c; /* Red to match theme */
-            border-radius: 10px;
-        }
-        #modalContent::-webkit-scrollbar-thumb:hover {
-            background: #991b1b;
         }
 
-        /* "Watched" Checkmark Overlay */
-        .calendar-box.watched {
-            position: relative;
+        #modal-poster {
+            width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            background-color: #374151; /* Placeholder bg */
         }
-        .check-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: rgba(22, 163, 74, 0.7); /* semi-transparent green */
-            border-radius: 0.5rem; /* match card */
+        
+        /* --- NEW: Style for our TMDb Link --- */
+        .tmdb-link {
+            display: inline-block;
+            margin-top: 0.75rem;
+            padding: 0.5rem 1rem;
+            background-color: #0d253f; /* TMDb Dark Blue */
+            color: #90cea1; /* TMDb Green */
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
         }
-        .check-overlay svg {
-            width: 50%;
-            height: 50%;
-            color: white;
+        .tmdb-link:hover {
+            background-color: #01b4e4; /* TMDb Light Blue */
+            color: #0d253f;
         }
+
+        /* Pulse animation for unlocked days */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .8; }
+        }
+        .day-box-unlocked:not(.day-box-watched) {
+            animation: pulse 2.5s infinite;
+        }
+
     </style>
-
-    <!-- 
-      ~~~ Open Graph (OG) Tags ~~~
-      These tell social media (Facebook, X/Twitter, etc.)
-      how to display our site when someone shares the link.
-      This is great thinking for our META course!
-    -->
-    <meta property="og:title" content="Chris & Emma's Holiday Movie Marathon" />
-    <meta property="og:type" content="website" />
-    <meta property="og:description" content="Join our 25-day Advent calendar of festive movie classics. See what we picked and track your progress!" />
-    <!-- !!! IMPORTANT: Update this URL when we go live on the official subdomain! -->
-    <meta property="og:url" content="https://movies.chrisandemmashow.com/" />
-    <!-- A festive 1200x630 placeholder image for social sharing -->
-    <meta property="og:image" content="https://placehold.co/1200x630/b91c1c/ffffff?text=Holiday+Movie+Marathon&font=inter" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta name="twitter:card" content="summary_large_image">
-    <!-- End Open Graph Tags -->
 </head>
-<body class="bg-gray-900 text-white">
-
-    <!-- Snow Container -->
-    <div id="snow-container"></div>
+<body class="bg-gray-900 text-gray-300">
 
     <!-- Main Container -->
-    <div class="container mx-auto px-4 py-8 relative z-10">
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl min-h-screen">
         
         <!-- Header -->
         <header class="text-center mb-8">
-            <h1 class="festive-title text-6xl md:text-8xl text-red-500 drop-shadow-lg">Holiday Movie Marathon</h1>
-            <p class="text-2xl md:text-4xl text-green-400 font-bold mt-4" id="countdown">Calculating days 'til Christmas...</p>
-            <p class="text-lg text-gray-300 mt-2">Curated by Chris, Emma, & Inga</p>
+            <h1 class="font-christmas text-6xl md:text-8xl text-red-600 mb-2">Movie Marathon</h1>
+            <h2 id="countdown" class="text-xl md:text-3xl text-gray-300 mb-2">Only 00 Days 'til Christmas!</h2>
+            <p class="text-md md:text-lg text-gray-400">Curated by Chris, Emma, & Inga</p>
         </header>
 
-        <!-- Advent Calendar Grid -->
-        <main class="max-w-6xl mx-auto">
-            <div id="calendar-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                <!-- 
-                    JavaScript will generate 25 boxes here.
-                    They will start as "locked" and be "unlocked" by the JS.
-                    
-                    Example of a box (will be generated by JS):
-                    <div id="day-1" class="calendar-box locked aspect-square bg-gray-700 rounded-lg flex items-center justify-center text-4xl font-bold opacity-50">
-                        <span><svg ...> (lock icon) </svg></span>
-                    </div>
-                -->
-            </div>
+        <!-- Movie Grid -->
+        <main id="movie-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 md:gap-5">
+            <!-- Day boxes will be generated by JavaScript -->
         </main>
         
         <!-- Footer -->
-        <footer class="text-center text-gray-500 mt-12">
-            <p>&copy; <span id="footer-year"></span> chrisandemmashow.com | Designed with ❤️ Chris and Emma</p>
+        <footer class="text-center text-gray-500 text-sm mt-12">
+            <p>Designed with ❤️ by Chris and Emma.</p>
+            <p>This product uses the TMDb API but is not endorsed or certified by TMDb.</p>
         </footer>
 
     </div>
 
-    <!-- Movie Modal (Hidden by Default) -->
-    <div id="movieModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[10000] p-4 backdrop-blur-sm">
-        <div id="modalContent" class="bg-white text-gray-900 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl">
-            <!-- Close Button -->
-            <button id="closeModal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-900 z-50">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-
-            <!-- Modal Content Grid -->
-            <div class="flex flex-col md:flex-row">
-                <!-- Left: Poster -->
-                <div class="md:w-1/3">
-                    <img id="modalPoster" src="https://placehold.co/500x750/e0e0e0/ffffff?text=Loading..." alt="Movie Poster" class="w-full h-auto object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none">
+    <!-- Modal Container -->
+    <div id="movieModal" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            
+            <!-- Modal Header -->
+            <header class="flex justify-between items-center p-4 border-b border-gray-600">
+                <h3 id="modal-title" class="text-2xl font-bold text-white">Loading...</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-white" aria-label="Close modal">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </header>
+            
+            <!-- 
+              =======================================================
+              Modal Body (RE-IMPLEMENTED TWO-COLUMN LAYOUT)
+              =======================================================
+            -->
+            <div id="movieModalBody" class="p-6">
+                
+                <!-- Left Column (Poster) -->
+                <div>
+                    <img id="modal-poster" 
+                         src="" 
+                         alt="Movie Poster" 
+                         class="w-full h-auto rounded-lg bg-gray-700">
                 </div>
-
-                <!-- Right: Details -->
-                <div class="md:w-2/3 p-6 md:p-8">
-                    <h2 id="modalTitle" class="text-3xl md:text-4xl font-bold mb-2">Loading Movie...</h2>
+                
+                <!-- Right Column (Info) -->
+                <div>
+                    <div class="mb-3">
+                        <span class="text-sm font-bold text-gray-400">Picked by:</span>
+                        <p id="modal-picked-by" class="text-lg text-white">Loading...</p>
+                    </div>
                     
-                    <div class="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-600 mb-4">
-                        <span>Picked by: <strong id="modalPickedBy" class="text-gray-900">...</strong></span>
-                        <span>Rating: <strong id="modalRating" class="text-gray-900">...</strong>/10</span>
+                    <div class="mb-3">
+                        <span class="text-sm font-bold text-gray-400">Rating:</span>
+                        <p id="modal-rating" class="text-lg text-white">N/A</p>
                     </div>
 
-                    <p id="modalDescription" class="text-base text-gray-700 mb-6">Loading description...</p>
+                    <div class="mb-3">
+                        <span class="text-sm font-bold text-gray-400">Description:</span>
+                        <p id="modal-description" class="text-sm text-gray-300">Loading description...</p>
+                    </div>
 
-                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
-                        <a id="modalTrailer" href="#" target="_blank" class="w-full sm:w-auto inline-block text-center bg-red-700 hover:bg-red-800 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                            Watch Trailer
+                    <div class="mb-3">
+                        <span class="text-sm font-bold text-gray-400">Where to Watch:</span>
+                        <p id="modal-streaming" class="text-lg text-white">Loading...</p>
+                        <p class="text-xs text-gray-500">(Streaming info manually updated and may change.)</p>
+                        
+                        <a id="modal-tmdb-link" 
+                           href="#" 
+                           target="_blank" 
+                           rel="noopener noreferrer" 
+                           class="tmdb-link">
+                           See on TMDb (for streaming info) &rarr;
                         </a>
-                        <div class="w-full sm:w-auto flex items-center justify-center bg-gray-100 rounded-lg p-3">
-                            <input type="checkbox" id="modalWatched" class="h-5 w-5 text-red-700 border-gray-300 rounded focus:ring-red-600">
-                            <label for="modalWatched" class="ml-3 text-sm font-medium text-gray-900">I've watched this!</label>
-                        </div>
                     </div>
 
-                    <div class="border-t border-gray-200 pt-4">
-                        <h4 class="font-semibold text-gray-800">Where to Watch:</h4>
-                        <p id="modalStreaming" class="text-gray-600">Loading streaming info...</p>
-                        <p class="text-xs text-gray-400 mt-2">(Streaming info manually updated and may change.)</p>
+                    <!-- "Watched It" Checkbox -->
+                    <div class="mt-4 bg-gray-800 p-3 rounded-lg">
+                        <label for="modal-watched" class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="modal-watched" class="h-5 w-5 rounded bg-gray-700 border-gray-600 text-red-600 focus:ring-red-500">
+                            <span class="ml-3 text-lg text-white">I've watched this!</span>
+                        </label>
                     </div>
                 </div>
+
             </div>
+
         </div>
     </div>
 
-
-    <!-- 4. Our Main JavaScript Logic -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // --- Snow Effect ---
+        // (This code is unchanged and works)
+        (function() {
+            function generateSnow() {
+                const sheet = document.getElementById('snow-styles').sheet;
+                if (!sheet) {
+                    console.error("Snow stylesheet not found.");
+                    return;
+                }
+                const snowflake = '❄️';
+                const count = 50;
+                let keyframes = '@keyframes fall { 0% { opacity: 1; transform: translate(0, -10vh); } 100% { opacity: 1; transform: translate(var(--x-end), 110vh); } }';
+                try {
+                    sheet.insertRule(keyframes, sheet.cssRules.length);
+                } catch (e) {
+                    console.error("Failed to insert @keyframes rule:", e);
+                    return; 
+                }
 
+                for (let i = 0; i < count; i++) {
+                    const xStart = Math.random() * 100;
+                    const xEnd = Math.random() * 100;
+                    const duration = (Math.random() * 10) + 5;
+                    const delay = Math.random() * -15;
+                    const size = (Math.random() * 0.8) + 0.2;
+
+                    let rule = `
+                        .snow:nth-child(${i + 1}) {
+                            --x-end: ${xEnd}vw;
+                            left: ${xStart}vw;
+                            animation: fall ${duration}s ${delay}s linear infinite;
+                            font-size: ${size}em;
+                        }
+                    `;
+                    try {
+                        sheet.insertRule(rule, sheet.cssRules.length);
+                    } catch (e) {
+                        console.error("Failed to insert snow rule:", e);
+                    }
+                }
+
+                const snowContainer = document.createElement('div');
+                snowContainer.className = 'snow-container';
+                snowContainer.setAttribute('aria-hidden', 'true');
+                for (let i = 0; i < count; i++) {
+                    const span = document.createElement('span');
+                    span.className = 'snow';
+                    span.textContent = snowflake;
+                    snowContainer.appendChild(span);
+                }
+                document.body.appendChild(snowContainer);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', generateSnow);
+            } else {
+                generateSnow();
+            }
+        })();
+
+        // --- App Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // ---
             // --- IMPORTANT! ---
             // Put your TMDb API Key here, partner!
             // ---
             const API_KEY = '029deb812d6a02185b3e9c54cbc3b68e'; 
             // ---
+            // ---
 
-            const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-            const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+            const API_BASE_URL = 'https://api.themoviedb.org/3/movie/';
+            const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w400';
+            const PLACEHOLDER_POSTER_URL = 'https://placehold.co/400x600/1f2937/374151?text=No+Poster';
 
-            // Modal DOM elements
+            const grid = document.getElementById('movie-grid');
             const modal = document.getElementById('movieModal');
-            const modalContent = document.getElementById('modalContent');
             const closeModalBtn = document.getElementById('closeModal');
-            const modalTitle = document.getElementById('modalTitle');
-            const modalPoster = document.getElementById('modalPoster');
-            const modalPickedBy = document.getElementById('modalPickedBy');
-            const modalRating = document.getElementById('modalRating');
-            const modalDescription = document.getElementById('modalDescription');
-            const modalTrailer = document.getElementById('modalTrailer');
-            const modalStreaming = document.getElementById('modalStreaming');
-            const modalWatched = document.getElementById('modalWatched');
+            const watchedCheckbox = document.getElementById('modal-watched');
             
-            const grid = document.getElementById('calendar-grid');
-            const countdownEl = document.getElementById('countdown');
-            const snowContainer = document.getElementById('snow-container');
+            let currentDayId = null; // e.g., "movie-1"
+            let movieDataCache = []; // Caches our PHP fetch
 
-            // Load our "watched" list from the user's browser
-            let watchedList = JSON.parse(localStorage.getItem('holidayWatchedMovies')) || [];
-            
-            // Create a dedicated stylesheet for our dynamic keyframes to avoid security errors
-            let dynamicStyleSheet = null;
-            try {
-                const styleEl = document.createElement('style');
-                document.head.appendChild(styleEl);
-                dynamicStyleSheet = styleEl.sheet;
-            } catch (e) {
-                console.error("Could not create dynamic stylesheet for snow animations:", e);
-            }
+            // --- 1. Initialize the App ---
+            initializeApp();
 
-            /**
-             * Main function to kick everything off
-             */
-            function initializeApp() {
-                generateSnow();
+            async function initializeApp() {
                 updateCountdown();
-                generateCalendarGrid(); // Generate the grid first
-                fetchMovieData(); // Then fetch data to unlock boxes
-                document.getElementById('footer-year').innerText = new Date().getFullYear();
-
-                // Modal close events
-                closeModalBtn.addEventListener('click', closeModal);
-                modal.addEventListener('click', (e) => {
-                    // Close if clicking on the dark background
-                    if (e.target === modal) {
-                        closeModal();
-                    }
-                });
+                await fetchMovieData();
+                generateGrid();
             }
 
-            /**
-             * Creates the 25 boxes for our calendar grid
-             */
-            function generateCalendarGrid() {
-                let gridHTML = '';
-                const lockIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>`;
-                
-                for (let i = 1; i <= 25; i++) {
-                    gridHTML += `
-                        <div id="day-${i}" 
-                             class="calendar-box locked aspect-square bg-gray-800 border-2 border-gray-700 rounded-lg flex items-center justify-center text-4xl font-bold text-gray-500 transition-all duration-300"
-                             data-day-num="${i}">
-                            <span>${lockIcon}</span>
-                        </div>
-                    `;
-                }
-                grid.innerHTML = gridHTML;
-            }
-
-            /**
-             * Generates the falling snow particles
-             */
-            function generateSnow() {
-                for (let i = 0; i < 100; i++) {
-                    const snowFlake = document.createElement('div');
-                    const size = Math.random() * 4 + 1; // 1px to 5px
-                    snowFlake.className = 'snow';
-                    snowFlake.style.width = `${size}px`;
-                    snowFlake.style.height = `${size}px`;
-                    snowFlake.style.left = `${Math.random() * 100}vw`;
-                    snowFlake.style.animationDuration = `${Math.random() * 5 + 10}s`; // 10s to 15s
-                    snowFlake.style.animationDelay = `${Math.random() * 10}s`;
-                    snowFlake.style.opacity = Math.random() * 0.5 + 0.3; // 0.3 to 0.8
-                    
-                    // Fancier horizontal movement
-                    const horizontal = Math.random() * 10 - 5; // -5vw to +5vw
-                    snowFlake.style.animationName = `snowfall-${i}`;
-                    const keyframe = `
-                        @keyframes snowfall-${i} {
-                            0% { transform: translateY(0) translateX(0); }
-                            100% { transform: translateY(105vh) translateX(${horizontal}vw); }
-                        }
-                    `;
-                    
-                    // Use our dedicated stylesheet to insert keyframes
-                    if (dynamicStyleSheet) {
-                        dynamicStyleSheet.insertRule(keyframe, 0);
-                    } else {
-                        // Fallback or error if stylesheet creation failed
-                        console.warn("Dynamic stylesheet not available for snow animation.");
-                        // We avoid inserting into document.styleSheets[0] to prevent the error
-                    }
-
-                    snowContainer.appendChild(snowFlake);
-                }
-            }
-
-            /**
-             * Updates the "Days 'til Christmas" countdown
-             */
+            // --- 2. Update Countdown ---
             function updateCountdown() {
                 const today = new Date();
-                const currentYear = today.getFullYear();
-                const christmasDay = new Date(currentYear, 11, 25); // Month is 0-indexed (11 = Dec)
-
-                // If it's after Christmas, count to next year's
-                if (today > christmasDay) {
-                    christmasDay.setFullYear(currentYear + 1);
+                const christmas = new Date(today.getFullYear(), 11, 25);
+                if (today.getMonth() == 11 && today.getDate() > 25) {
+                    christmas.setFullYear(christmas.getFullYear() + 1);
                 }
-                
-                // If it's Dec 25th
-                if (today.getMonth() == 11 && today.getDate() == 25) {
-                    countdownEl.innerHTML = "It's Christmas! <span class='block text-5xl mt-2'>🎄</span>";
-                    return;
-                }
-
-                const diff = christmasDay.getTime() - today.getTime();
-                const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-
-                countdownEl.innerText = `Only ${days} Day${days > 1 ? 's' : ''} 'til Christmas!`;
+                const oneDay = 1000 * 60 * 60 * 24;
+                const daysLeft = Math.ceil((christmas.getTime() - today.getTime()) / oneDay);
+                document.getElementById('countdown').textContent = `Only ${daysLeft} Days 'til Christmas!`;
             }
 
-            /**
-             * Fetches our movie list from our PHP backend
-             */
+            // --- 3. Fetch Movie Data from Our PHP Script ---
             async function fetchMovieData() {
                 try {
-                    // This is the call to our new backend file!
                     const response = await fetch('get_movies.php');
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    const movies = await response.json();
-                    
-                    // Now that we have the movies, update the grid
-                    updateCalendarGrid(movies);
-                    
-                    // Also apply the "watched" status from localStorage
-                    updateWatchedGrid();
-
+                    movieDataCache = await response.json();
                 } catch (error) {
-                    console.error("Failed to fetch movie data:", error);
-                    grid.innerHTML = `<p class="text-red-400 col-span-full text-center">Could not load movie list. Is the backend running, partner?</p>`;
+                    console.error("Failed to fetch movie list:", error);
+                    grid.innerHTML = `<p class="text-red-400 col-span-full">Error: Could not load movie data. Is the PHP file running?</p>`;
                 }
             }
 
-            /**
-             * Unlocks the calendar boxes based on fetched data
-             */
-            function updateCalendarGrid(movies) {
-                movies.forEach(movie => {
-                    const box = document.getElementById(`day-${movie.day}`);
-                    if (box) {
-                        box.classList.remove('locked', 'bg-gray-800', 'border-gray-700', 'text-gray-500');
-                        box.classList.add('unlocked', 'bg-red-700', 'border-red-600', 'hover:bg-red-600', 'hover:scale-105', 'cursor-pointer', 'shadow-lg', 'text-white');
-                        box.innerHTML = `<span class="text-5xl font-bold drop-shadow-md">${movie.day}</span>`;
-                        
-                        // Store all our data in the element for later
-                        box.dataset.day = movie.day;
-                        box.dataset.tmdbId = movie.tmdb_id;
-                        box.dataset.title = movie.movie_title;
-                        box.dataset.pickedBy = movie.picked_by;
-                        box.dataset.streaming = movie.streaming_notes;
-                        box.dataset.altTmdbId = movie.alt_tmdb_id;
-                        
-                        // Add the click event listener
-                        box.addEventListener('click', () => openModal(box.dataset));
-                    }
-                });
-            }
-
-            /**
-             * Applies the green "watched" overlay to boxes
-             */
-            function updateWatchedGrid() {
-                const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>`;
-
+            // --- 4. Generate the 25-Day Grid ---
+            function generateGrid() {
+                grid.innerHTML = ''; // Clear grid
+                const watchedMovies = getWatchedMovies();
+                
                 for (let i = 1; i <= 25; i++) {
-                    const box = document.getElementById(`day-${i}`);
-                    if (box && box.classList.contains('unlocked')) {
-                        const tmdbId = box.dataset.tmdbId;
-                        const existingOverlay = box.querySelector('.check-overlay');
-
-                        if (watchedList.includes(tmdbId)) {
-                            box.classList.add('watched', 'bg-green-700', 'border-green-600');
-                            box.classList.remove('bg-red-700', 'border-red-600');
-                            if (!existingOverlay) {
-                                box.innerHTML += `<div class="check-overlay">${checkIcon}</div>`;
-                            }
-                        } else {
-                            box.classList.remove('watched', 'bg-green-700', 'border-green-600');
-                            box.classList.add('bg-red-700', 'border-red-600');
-                            if (existingOverlay) {
-                                existingOverlay.remove();
-                            }
+                    const dayBox = document.createElement('div');
+                    dayBox.className = 'day-box flex items-center justify-center rounded-lg';
+                    
+                    const movie = movieDataCache.find(m => m.day == i);
+                    
+                    if (movie) {
+                        // This day is UNLOCKED
+                        dayBox.classList.add('day-box-unlocked');
+                        dayBox.innerHTML = `<span class="number">${i}</span>`;
+                        dayBox.dataset.movieId = i;
+                        dayBox.setAttribute('role', 'button');
+                        dayBox.setAttribute('tabindex', '0');
+                        dayBox.setAttribute('aria-label', `View movie for Day ${i}: ${movie.movie_title}`);
+                        
+                        // Check if it's been watched
+                        if (watchedMovies.includes(`movie-${i}`)) {
+                            dayBox.classList.add('day-box-watched');
                         }
+                        
+                        dayBox.addEventListener('click', () => openModal(movie));
+                        dayBox.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') openModal(movie);
+                        });
+                    } else {
+                        // This day is LOCKED
+                        dayBox.classList.add('day-box-locked');
+                        dayBox.innerHTML = `<svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>`;
                     }
+                    grid.appendChild(dayBox);
                 }
             }
+            
+            // --- 5. Open and Populate the Modal ---
+            async function openModal(movie) {
+                currentDayId = `movie-${movie.day}`; // e.g., "movie-1"
+                
+                // --- Step 5a: Populate with OUR database data (instant) ---
+                document.getElementById('modal-title').textContent = movie.movie_title;
+                document.getElementById('modal-picked-by').textContent = movie.picked_by || 'N/A';
+                document.getElementById('modal-streaming').textContent = movie.streaming_notes || 'Check TMDb';
+                
+                // Set the dynamic TMDb link URL
+                const tmdbLink = document.getElementById('modal-tmdb-link');
+                if (movie.tmdb_id) {
+                    tmdbLink.href = `https://www.themoviedb.org/movie/${movie.tmdb_id}`;
+                    tmdbLink.style.display = 'inline-block';
+                } else {
+                    tmdbLink.style.display = 'none';
+                }
+                
+                // Set modal to default/loading state before API call
+                document.getElementById('modal-poster').src = PLACEHOLDER_POSTER_URL;
+                document.getElementById('modal-description').textContent = 'Loading description...';
+                document.getElementById('modal-rating').textContent = 'N/A';
 
-            /**
-             * Opens the modal and triggers TMDb fetch
-             */
-            function openModal(movieData) {
-                // 1. Store the ID on the modal for the checkbox
-                modal.dataset.tmdbId = movieData.tmdbId;
+                // Check "Watched" status
+                watchedCheckbox.checked = getWatchedMovies().includes(currentDayId);
                 
-                // 2. Fill in the data we already have from our DB
-                modalTitle.innerText = movieData.title;
-                modalPickedBy.innerText = movieData.pickedBy || 'N/A';
-                modalStreaming.innerText = movieData.streaming || 'Info not available';
-                
-                // 3. Set "watched" checkbox state
-                modalWatched.checked = watchedList.includes(movieData.tmdbId);
-                
-                // 4. Reset fields to "Loading"
-                modalPoster.src = "https://placehold.co/500x750/e0e0e0/ffffff?text=Loading...";
-                modalRating.innerText = "...";
-                modalDescription.innerText = "Loading description...";
-                modalTrailer.href = "#";
-
-                // 5. Show the modal
                 modal.classList.remove('hidden');
-                
-                // 6. Fetch the rich data from TMDb
-                fetchTMDbDetails(movieData.tmdbId);
-            }
+                modal.setAttribute('aria-hidden', 'false');
+                document.getElementById('modal-title').focus(); // Focus the modal title for accessibility
 
-            /**
-             * Fetches rich data (poster, desc) from TMDb
-             */
-            async function fetchTMDbDetails(id) {
-                if (API_KEY === 'YOUR_TMDB_API_KEY_GOES_HERE') {
-                    modalDescription.innerText = "Error: API_KEY is not set in index.html. Please ask Chris to add it!";
+                // --- Step 5b: Fetch data from TMDb (the "ambitious" part) ---
+                if (!movie.tmdb_id) {
+                    document.getElementById('modal-description').textContent = 'No TMDb ID found for this movie.';
+                    return; // Don't even try to fetch
+                }
+                
+                if (!API_KEY || API_KEY === 'YOUR_TMDB_API_KEY_GOES_HERE') {
+                    console.error("TMDb API Key is missing!");
+                    document.getElementById('modal-description').textContent = 'TMDb API Key is missing. Cannot load details.';
                     return;
                 }
-                
-                const url = `${TMDB_BASE_URL}/movie/${id}?api_key=${API_KEY}&append_to_response=videos`;
-                
+
                 try {
-                    const response = await fetch(url);
+                    const response = await fetch(`${API_BASE_URL}${movie.tmdb_id}?api_key=${API_KEY}`);
+                    if (!response.ok) {
+                        throw new Error(`API returned ${response.status}`);
+                    }
                     const data = await response.json();
 
-                    modalPoster.src = data.poster_path ? `${IMAGE_BASE_URL}${data.poster_path}` : "https://placehold.co/500x750/cccccc/ffffff?text=No+Poster";
-                    modalRating.innerText = data.vote_average ? data.vote_average.toFixed(1) : 'N/A';
-                    modalDescription.innerText = data.overview || 'No description available.';
-
-                    // Find the official trailer on YouTube
-                    const trailer = data.videos?.results?.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official);
-                    if (trailer) {
-                        modalTrailer.href = `https://www.youtube.com/watch?v=${trailer.key}`;
+                    // --- Step 5c: Populate with TMDb data (Success!) ---
+                    
+                    // Set Poster (with fallback)
+                    if (data.poster_path) {
+                        document.getElementById('modal-poster').src = `${IMAGE_BASE_URL}${data.poster_path}`;
                     } else {
-                        modalTrailer.href = `https://www.youtube.com/results?search_query=${modalTitle.innerText}+trailer`;
+                        document.getElementById('modal-poster').src = PLACEHOLDER_POSTER_URL;
+                    }
+                    
+                    // Set Description (with fallback)
+                    if (data.overview) {
+                        document.getElementById('modal-description').textContent = data.overview;
+                    } else {
+                        document.getElementById('modal-description').textContent = 'No description available from TMDb.';
+                    }
+                    
+                    // Set Rating (with fallback)
+                    if (data.vote_average && data.vote_average > 0) {
+                        document.getElementById('modal-rating').textContent = `${data.vote_average.toFixed(1)} / 10`;
+                    } else {
+                        document.getElementById('modal-rating').textContent = 'N/A';
                     }
 
                 } catch (error) {
-                    console.error("Failed to fetch TMDb details:", error);
-                    modalDescription.innerText = "Could not load movie details from TMDb.";
+                    // --- Step 5d: Handle API Error (Fallback) ---
+                    console.error("Error fetching TMDb data:", error);
+                    document.getElementById('modal-poster').src = PLACEHOLDER_POSTER_URL;
+                    document.getElementById('modal-description').textContent = 'Could not load movie details. Please use the TMDb link for more info.';
+                    document.getElementById('modal-rating').textContent = 'N/A';
                 }
             }
 
-            /**
-             * Closes the modal
-             */
+            // --- 6. Close the Modal ---
             function closeModal() {
                 modal.classList.add('hidden');
-                // Clear content to prevent "flash"
-                modalTitle.innerText = "Loading...";
-                modalPoster.src = "https://placehold.co/500x750/e0e0e0/ffffff?text=Loading...";
-                modalDescription.innerText = "Loading...";
+                modal.setAttribute('aria-hidden', 'true');
+                currentDayId = null;
             }
-
-            /**
-             * Handles the "Watched It!" checkbox logic
-             */
-            function toggleWatched(id, isChecked) {
-                // Remove from list
-                watchedList = watchedList.filter(item => item !== id);
+            
+            // --- 7. Handle "Watched It" Checkbox ---
+            function getWatchedMovies() {
+                return JSON.parse(localStorage.getItem('watchedHolidayMovies') || '[]');
+            }
+            
+            function handleWatchToggle() {
+                if (!currentDayId) return;
                 
-                // Add back if it's checked
-                if (isChecked) {
-                    watchedList.push(id);
+                const watchedMovies = getWatchedMovies();
+                const dayBox = document.querySelector(`.day-box[data-movie-id="${currentDayId.split('-')[1]}"]`);
+
+                if (watchedCheckbox.checked) {
+                    // Add to list
+                    if (!watchedMovies.includes(currentDayId)) {
+                        watchedMovies.push(currentDayId);
+                    }
+                    if (dayBox) dayBox.classList.add('day-box-watched');
+                } else {
+                    // Remove from list
+                    const index = watchedMovies.indexOf(currentDayId);
+                    if (index > -1) {
+                        watchedMovies.splice(index, 1);
+                    }
+                    if (dayBox) dayBox.classList.remove('day-box-watched');
                 }
                 
-                // Save to user's browser
-                localStorage.setItem('holidayWatchedMovies', JSON.stringify(watchedList));
-                
-                // Update the main grid
-                updateWatchedGrid();
+                localStorage.setItem('watchedHolidayMovies', JSON.stringify(watchedMovies));
             }
 
-            // Add the listener for the checkbox
-            modalWatched.addEventListener('change', (e) => {
-                const tmdbId = modal.dataset.tmdbId;
-                if (tmdbId) {
-                    toggleWatched(tmdbId, e.target.checked);
+            // --- Event Listeners ---
+            closeModalBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal(); // Click outside modal content
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    closeModal();
                 }
             });
+            watchedCheckbox.addEventListener('change', handleWatchToggle);
 
-            // Let's go!
-            initializeApp();
         });
     </script>
+
 </body>
 </html>
-
 
