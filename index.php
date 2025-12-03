@@ -333,7 +333,7 @@
          */
         async function fetchMovies() {
             try {
-                const response = await fetch(API_ENDPOINT);
+                const response = await fetch(API_ENDPOINT + '?t=' + new Date().getTime());
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }

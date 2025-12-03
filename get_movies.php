@@ -1,12 +1,11 @@
 <?php
-// ---
-// This is our simple, secure backend API.
-// Its only job is to get the correct movies from the DB
-// based on the current date and send them as JSON.
-// ---
 
 // 1. Set the content type to JSON
 header('Content-Type: application/json');
+
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
 
 // ---
 // !!! IMPORTANT, CHRIS !!!
