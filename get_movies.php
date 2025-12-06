@@ -29,7 +29,7 @@ $movies = [];
 // 3. Only bother connecting to the DB if it's December
 // We use '12' for December.
 // (For testing, you can temporarily change this to your current month, e.g., '10' for October)
-if ($currentMonth == 11) { // <-- THE FIX IS HERE!
+if ($currentMonth == 12) { // <-- THE FIX IS HERE!
     
     // Create connection
     $conn = new mysqli($servername, $username, $password, $dbname);
